@@ -20,6 +20,7 @@
     - "{{ consul_template_home }}/bin"
     - "{{ consul_template_home }}/config"
     - "{{ consul_template_home }}/templates"
+    - "{{ consul_template_home }}/releases"
 
 - name: download consul-template binary
   get_url:
@@ -29,18 +30,21 @@
 - name: unzip the downloaded package
   unarchive:
     src: "/tmp/{{ consul_template_archive_file }}"
-    dest: "/tmp"
-    owner: "root"
-    group: "root"
-    creates: "/tmp/{{ consul_template_release }}/{{ consul_template_binary }}"
-
-- name: copy consul-template binary into place
-  copy:
-    src: "/tmp/{{ consul_template_release }}/{{ consul_template_binary }}"
-    dest: "{{ consul_template_home }}/bin/{{ consul_template_binary }}"
+    dest: "{{ consul_template_home }}/releases/"
+    copy: no
     owner: "root"
     group: "root"
     mode: "0755"
+    creates: "{{ consul_template_home }}/releases/{{ consul_template_release }}/{{ consul_template_binary }}"
+
+- name: link new release to bin directory
+  file:
+    src: "{{ consul_template_home }}/releases/{{ consul_template_release }}/{{ consul_template_binary }}"
+    dest: "{{ consul_template_home }}/bin/{{ consul_template_binary }}"
+    owner: root
+    group: root
+    mode: "0755"
+    state: link
 
 - name: copy consul-template systemd service configuration
   template: >
@@ -69,3 +73,13 @@
     src={{ consul_template_config_file_template }}
     dest={{ consul_template_home }}/config/{{ consul_template_config_file }}
     mode=0755
+
+- name: install templates
+  copy:
+    src: "{{ item.source }}"
+    dest: "{{ consul_template_home }}/templates/{{ item.source | basename }}"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  with_items:
+    - "{{consul_template_templates}}"

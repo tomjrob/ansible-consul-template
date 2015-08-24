@@ -1,1 +1,9 @@
 consul = "{{ consul_template_consul_server }}:8500"
+
+{% for item in consul_template_templates %}
+template {
+  source = "{{ consul_template_home }}/templates/{{ item.source | basename }}"
+  destination  = {{ item.destination }}
+  command = {{ item.command }}
+}
+{% endfor %}
